@@ -16,9 +16,12 @@ func NewLogger(level zapcore.Level, options ...zap.Option) *LeveledLogger {
 		encoder.AppendString(t.Format(time.RFC3339Nano))
 	}
 
-	options = append(options, zap.AddCallerSkip(3))
+	opts := []zap.Option{
+		zap.AddCallerSkip(3),
+	}
+	opts = append(opts, options...)
 
-	zapLogger, err := cfg.Build(options...)
+	zapLogger, err := cfg.Build(opts...)
 	if err != nil {
 		log.Fatalf("err creating logger: %v\n", err.Error())
 	}
