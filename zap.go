@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger(level zapcore.Level) *LeveledLogger {
+func NewLogger(level zapcore.Level, options ...zap.Option) *LeveledLogger {
 	cfg := zap.NewProductionConfig()
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.TimeKey = "timestamp"
@@ -16,11 +16,9 @@ func NewLogger(level zapcore.Level) *LeveledLogger {
 		encoder.AppendString(t.Format(time.RFC3339Nano))
 	}
 
-	opts := []zap.Option{
-		zap.AddCallerSkip(3),
-	}
+	options = append(options, zap.AddCallerSkip(3))
 
-	zapLogger, err := cfg.Build(opts...)
+	zapLogger, err := cfg.Build(options...)
 	if err != nil {
 		log.Fatalf("err creating logger: %v\n", err.Error())
 	}
