@@ -136,23 +136,31 @@ func (s *Span) Close() {
 	}
 }
 
-// Error .
-func (s *Span) Error(err error, fields ...zapcore.Field) {
-	if s.ll.Level >= zapcore.ErrorLevel {
-		s.printToLog(zapcore.ErrorLevel, withStacktrace(err), 1, fields...)
-	}
-}
+// This is neat but unfortunately it breaks the zap interface expectations
+// // Error .
+// func (s *Span) Error(err error, fields ...zapcore.Field) {
+// 	if s.ll.Level >= zapcore.ErrorLevel {
+// 		s.printToLog(zapcore.ErrorLevel, withStacktrace(err), 1, fields...)
+// 	}
+// }
+//
+// func withStacktrace(err error) string {
+// 	// %+v gives us the error message plus a full stack trace for the error, as long as it was constructed with the "github.com/pkg/errors" package
+// 	// we should strive to use `errors.New`, `errors.Errorf`, and `errors.Wrap` wherever we create a new error or get one from an external source
+// 	return fmt.Sprintf("%+v", err)
+// }
 
-func withStacktrace(err error) string {
-	// %+v gives us the error message plus a full stack trace for the error, as long as it was constructed with the "github.com/pkg/errors" package
-	// we should strive to use `errors.New`, `errors.Errorf`, and `errors.Wrap` wherever we create a new error or get one from an external source
-	return fmt.Sprintf("%+v", err)
+// Error .
+func (s *Span) Error(msg string, fields ...zapcore.Field) {
+	if s.ll.Level >= zapcore.ErrorLevel {
+		s.printToLog(zapcore.ErrorLevel, msg, 1, fields...)
+	}
 }
 
 // Warn .
 func (s *Span) Warn(msg string, fields ...zapcore.Field) {
-	if s.ll.Level >= zapcore.InfoLevel {
-		s.printToLog(zapcore.InfoLevel, msg, 1, fields...)
+	if s.ll.Level >= zapcore.WarnLevel {
+		s.printToLog(zapcore.WarnLevel, msg, 1, fields...)
 	}
 }
 
