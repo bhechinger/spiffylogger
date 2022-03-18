@@ -128,8 +128,8 @@ func (s *Span) newID(depth int) string {
 
 // Close .
 func (s *Span) Close() {
-	// TODO MONSTRO-749: close/end OT span
-	// TODO MONSTRO-754: add timing metric to OT
+	// TODO: close/end OT span
+	// TODO: add timing metric to OT
 	dur := time.Since(s.start)
 	if s.ll.Level >= zapcore.DebugLevel {
 		s.printToLog(zapcore.DebugLevel, fmt.Sprintf("span closed dur=%dns", dur), 1)
@@ -137,17 +137,9 @@ func (s *Span) Close() {
 }
 
 // Error .
-func (s *Span) Error(err error) {
+func (s *Span) Error(err error, fields ...zapcore.Field) {
 	if s.ll.Level >= zapcore.ErrorLevel {
-		s.printToLog(zapcore.ErrorLevel, withStacktrace(err), 1)
-	}
-}
-
-// Errorf .
-func (s *Span) Errorf(err error, fs string, v ...interface{}) {
-	if s.ll.Level >= zapcore.ErrorLevel {
-		message := fmt.Sprintf(fs, v...)
-		s.printToLog(zapcore.ErrorLevel, fmt.Sprintf("%s: %s", message, withStacktrace(err)), 1)
+		s.printToLog(zapcore.ErrorLevel, withStacktrace(err), 1, fields...)
 	}
 }
 
@@ -157,31 +149,24 @@ func withStacktrace(err error) string {
 	return fmt.Sprintf("%+v", err)
 }
 
-// Info .
-func (s *Span) Info(msg string) {
+// Warn .
+func (s *Span) Warn(msg string, fields ...zapcore.Field) {
 	if s.ll.Level >= zapcore.InfoLevel {
-		s.printToLog(zapcore.InfoLevel, msg, 1)
+		s.printToLog(zapcore.InfoLevel, msg, 1, fields...)
 	}
 }
 
-// Infof .
-func (s *Span) Infof(fs string, v ...interface{}) {
+// Info .
+func (s *Span) Info(msg string, fields ...zapcore.Field) {
 	if s.ll.Level >= zapcore.InfoLevel {
-		s.printToLog(zapcore.InfoLevel, fmt.Sprintf(fs, v...), 1)
+		s.printToLog(zapcore.InfoLevel, msg, 1, fields...)
 	}
 }
 
 // Debug .
-func (s *Span) Debug(msg string) {
+func (s *Span) Debug(msg string, fields ...zapcore.Field) {
 	if s.ll.Level >= zapcore.DebugLevel {
-		s.printToLog(zapcore.DebugLevel, msg, 1)
-	}
-}
-
-// Debugf .
-func (s *Span) Debugf(fs string, v ...interface{}) {
-	if s.ll.Level >= zapcore.DebugLevel {
-		s.printToLog(zapcore.DebugLevel, fmt.Sprintf(fs, v...), 1)
+		s.printToLog(zapcore.DebugLevel, msg, 1, fields...)
 	}
 }
 
@@ -195,30 +180,24 @@ func (s *Span) Debugf(fs string, v ...interface{}) {
 // NOTE: depth is relative to the calls in this package. We always want depth to be equal to the call of these functions.
 // Therefore, its important to be careful to not call spans's public-facing functions inside of span.
 // Instead, each internal function should accept a depth value, and +1 that value for its own call.
-func (s *Span) printToLog(level zapcore.Level, msg string, depth int) {
+func (s *Span) printToLog(level zapcore.Level, msg string, depth int, fields ...zapcore.Field) {
 	depth++
 	c := stack.Caller(depth)
 	n := NewLine(level, s, msg, &c)
+	f := append(n.Fields, fields...)
 	switch s.ll.Level {
 	case zapcore.ErrorLevel:
-		s.ll.Logger.Error(msg, n.Fields...)
+		s.ll.Logger.Error(msg, f...)
 	case zapcore.WarnLevel:
-		s.ll.Logger.Warn(msg, n.Fields...)
+		s.ll.Logger.Warn(msg, f...)
 	case zapcore.InfoLevel:
-		s.ll.Logger.Info(msg, n.Fields...)
+		s.ll.Logger.Info(msg, f...)
 	case zapcore.DebugLevel:
-		s.ll.Logger.Debug(msg, n.Fields...)
+		s.ll.Logger.Debug(msg, f...)
 	}
 }
 
 // implement migration logging interface //TODO is there something else we can do here?
-
-// Printf .
-func (s *Span) Printf(msg string, v ...interface{}) {
-	if s.ll.Level >= zapcore.DebugLevel {
-		s.printToLog(zapcore.DebugLevel, fmt.Sprintf(msg, v...), 1)
-	}
-}
 
 // Verbose returns true if we are at DEBUG level logging
 func (s *Span) Verbose() bool {
