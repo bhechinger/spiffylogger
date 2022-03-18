@@ -17,7 +17,7 @@ func NewLogger(level zapcore.Level, options ...zap.Option) *LeveledLogger {
 	}
 
 	opts := []zap.Option{
-		zap.AddCallerSkip(3),
+		zap.AddCallerSkip(2),
 	}
 	opts = append(opts, options...)
 
@@ -37,7 +37,7 @@ func (zl LeveledLogger) Error(ll LogLine) {
 	zl.Logger.Error(ll.Message, ll.ZapFields()...)
 }
 
-// Error implements the LeveledLogWriter Error func with a zap logger.
+// Warn implements the LeveledLogWriter Warn func with a zap logger.
 func (zl LeveledLogger) Warn(ll LogLine) {
 	zl.Logger.Warn(ll.Message, ll.ZapFields()...)
 }
