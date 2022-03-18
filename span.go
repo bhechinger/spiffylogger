@@ -127,8 +127,7 @@ func (s *Span) newID(depth int) string {
 func (s *Span) Close() {
 	// TODO: close/end OT span
 	// TODO: add timing metric to OT
-	dur := time.Since(s.start)
-	s.printToLog(zapcore.DebugLevel, fmt.Sprintf("span closed dur=%dns", dur), 1)
+	s.printToLog(zapcore.DebugLevel, "span closed", 1)
 }
 
 // This is neat but unfortunately it breaks the zap interface expectations
@@ -178,15 +177,16 @@ func (s *Span) Debug(msg string, fields ...zapcore.Field) {
 func (s *Span) printToLog(level zapcore.Level, msg string, depth int, fields ...zapcore.Field) {
 	depth++
 	c := stack.Caller(depth)
+	dur := time.Since(s.start).Nanoseconds()
 	ll := NewLine(level, s, msg, &c, fields...)
 	switch level {
 	case zapcore.ErrorLevel:
-		s.logger.Error(msg, ll.ZapFields()...)
+		s.logger.Error(msg, ll.ZapFields(dur)...)
 	case zapcore.WarnLevel:
-		s.logger.Warn(msg, ll.ZapFields()...)
+		s.logger.Warn(msg, ll.ZapFields(dur)...)
 	case zapcore.InfoLevel:
-		s.logger.Info(msg, ll.ZapFields()...)
+		s.logger.Info(msg, ll.ZapFields(dur)...)
 	case zapcore.DebugLevel:
-		s.logger.Debug(msg, ll.ZapFields()...)
+		s.logger.Debug(msg, ll.ZapFields(dur)...)
 	}
 }

@@ -56,11 +56,12 @@ func NewLogger(level zapcore.Level, options ...zap.Option) *zap.Logger {
 // - ll.Timestamp	=> ts
 // - ll.File		=> caller
 // - ll.LineNumber	=> caller
-func (ll LogLine) ZapFields() []zapcore.Field {
+func (ll LogLine) ZapFields(duration int64) []zapcore.Field {
 	zapFields := []zapcore.Field{
 		zap.String("name", ll.Name),
 		zap.String("correlation_id", ll.CorrelationID),
 		zap.String("span_id", ll.SpanID),
+		zap.Int64("duration", duration),
 	}
 
 	return append(zapFields, ll.Fields...)
