@@ -4,23 +4,16 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
-
-// LeveledLogger wraps the standard logging interface with a level "gate"
-type LeveledLogger struct {
-	Logger *zap.Logger
-	Level  zapcore.Level
-}
 
 // key is an unexported type for keys defined in this package.
 // This prevents collisions with keys defined in other packages.
 type loggerKey struct{}
 
 // loggerFromContext pulls a logger from a context
-func loggerFromContext(ctx context.Context) (l *LeveledLogger, found bool) {
-	key, ok := ctx.Value(loggerKey{}).(*LeveledLogger)
+func loggerFromContext(ctx context.Context) (l *zap.Logger, found bool) {
+	key, ok := ctx.Value(loggerKey{}).(*zap.Logger)
 	if ok {
 		return key, ok
 	}
@@ -28,13 +21,13 @@ func loggerFromContext(ctx context.Context) (l *LeveledLogger, found bool) {
 }
 
 // CtxWithLogger allows for injecting a logger into a context
-func CtxWithLogger(ctx context.Context, l *LeveledLogger) context.Context {
+func CtxWithLogger(ctx context.Context, l *zap.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, l)
 }
 
 // LogServer is intended to be implemented by all servers that want to inject a logger into the context before calling endpoint handlers
 type LogServer interface {
-	Logger() *LeveledLogger
+	Logger() *zap.Logger
 }
 
 // LogInterceptor is used to inject a logger into the context

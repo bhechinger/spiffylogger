@@ -10,6 +10,7 @@ import (
 	"github.com/go-stack/stack"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -21,11 +22,11 @@ type (
 
 // Span is our implementation of a Spanner
 type Span struct {
-	name  string
-	start time.Time
-	cID   string
-	sID   string
-	ll    *LeveledLogger
+	name   string
+	start  time.Time
+	cID    string
+	sID    string
+	logger *zap.Logger
 }
 
 // OpenSpan configures and returns a Span from a context, creating a child span if one exists in the current context
@@ -73,16 +74,14 @@ func openNamedSpan(ctx context.Context, name string, depth int) (context.Context
 func openChildSpan(s *Span, childName string, depth int) *Span {
 	depth++
 	ns := &Span{
-		name:  fmt.Sprintf("%s|%s", s.name, childName), // semi-stacktrace naming
-		start: time.Now(),
-		cID:   s.cID,
-		ll:    s.ll,
+		name:   fmt.Sprintf("%s|%s", s.name, childName), // semi-stacktrace naming
+		start:  time.Now(),
+		cID:    s.cID,
+		logger: s.logger,
 	}
 	ns.sID = ns.newID(depth)
 
-	if s.ll.Level >= zapcore.DebugLevel {
-		ns.printToLog(zapcore.DebugLevel, "span opened (child)", depth)
-	}
+	ns.printToLog(zapcore.DebugLevel, "span opened (child)", depth)
 	return ns
 }
 
@@ -101,18 +100,16 @@ func CtxWithSpan(ctx context.Context, s *Span) context.Context {
 }
 
 // openNew returns a brand new span with a new CID
-func openNewSpan(name string, l *LeveledLogger, depth int) *Span {
+func openNewSpan(name string, l *zap.Logger, depth int) *Span {
 	depth++
 	s := &Span{
-		name:  name,
-		start: time.Now(),
-		ll:    l,
+		name:   name,
+		start:  time.Now(),
+		logger: l,
 	}
 	s.cID = s.newID(depth)
 	s.sID = s.newID(depth)
-	if s.ll.Level >= zapcore.DebugLevel {
-		s.printToLog(zapcore.DebugLevel, "span opened", 1)
-	}
+	s.printToLog(zapcore.DebugLevel, "span opened", 1)
 	return s
 }
 
@@ -131,9 +128,7 @@ func (s *Span) Close() {
 	// TODO: close/end OT span
 	// TODO: add timing metric to OT
 	dur := time.Since(s.start)
-	if s.ll.Level >= zapcore.DebugLevel {
-		s.printToLog(zapcore.DebugLevel, fmt.Sprintf("span closed dur=%dns", dur), 1)
-	}
+	s.printToLog(zapcore.DebugLevel, fmt.Sprintf("span closed dur=%dns", dur), 1)
 }
 
 // This is neat but unfortunately it breaks the zap interface expectations
@@ -152,30 +147,22 @@ func (s *Span) Close() {
 
 // Error .
 func (s *Span) Error(msg string, fields ...zapcore.Field) {
-	if s.ll.Level >= zapcore.ErrorLevel {
-		s.printToLog(zapcore.ErrorLevel, msg, 1, fields...)
-	}
+	s.printToLog(zapcore.ErrorLevel, msg, 1, fields...)
 }
 
 // Warn .
 func (s *Span) Warn(msg string, fields ...zapcore.Field) {
-	if s.ll.Level >= zapcore.WarnLevel {
-		s.printToLog(zapcore.WarnLevel, msg, 1, fields...)
-	}
+	s.printToLog(zapcore.WarnLevel, msg, 1, fields...)
 }
 
 // Info .
 func (s *Span) Info(msg string, fields ...zapcore.Field) {
-	if s.ll.Level >= zapcore.InfoLevel {
-		s.printToLog(zapcore.InfoLevel, msg, 1, fields...)
-	}
+	s.printToLog(zapcore.InfoLevel, msg, 1, fields...)
 }
 
 // Debug .
 func (s *Span) Debug(msg string, fields ...zapcore.Field) {
-	if s.ll.Level >= zapcore.DebugLevel {
-		s.printToLog(zapcore.DebugLevel, msg, 1, fields...)
-	}
+	s.printToLog(zapcore.DebugLevel, msg, 1, fields...)
 }
 
 // printToLog is solely responsible for creating log lines and printing them to the logger
@@ -191,23 +178,15 @@ func (s *Span) Debug(msg string, fields ...zapcore.Field) {
 func (s *Span) printToLog(level zapcore.Level, msg string, depth int, fields ...zapcore.Field) {
 	depth++
 	c := stack.Caller(depth)
-	n := NewLine(level, s, msg, &c)
-	f := append(n.Fields, fields...)
-	switch s.ll.Level {
+	ll := NewLine(level, s, msg, &c, fields...)
+	switch level {
 	case zapcore.ErrorLevel:
-		s.ll.Logger.Error(msg, f...)
+		s.logger.Error(msg, ll.ZapFields()...)
 	case zapcore.WarnLevel:
-		s.ll.Logger.Warn(msg, f...)
+		s.logger.Warn(msg, ll.ZapFields()...)
 	case zapcore.InfoLevel:
-		s.ll.Logger.Info(msg, f...)
+		s.logger.Info(msg, ll.ZapFields()...)
 	case zapcore.DebugLevel:
-		s.ll.Logger.Debug(msg, f...)
+		s.logger.Debug(msg, ll.ZapFields()...)
 	}
-}
-
-// implement migration logging interface //TODO is there something else we can do here?
-
-// Verbose returns true if we are at DEBUG level logging
-func (s *Span) Verbose() bool {
-	return s.ll.Level >= zapcore.DebugLevel
 }

@@ -8,8 +8,9 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger(level zapcore.Level, options ...zap.Option) *LeveledLogger {
+func NewLogger(level zapcore.Level, options ...zap.Option) *zap.Logger {
 	cfg := zap.NewProductionConfig()
+	cfg.Level.SetLevel(level)
 	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
 	cfg.EncoderConfig.TimeKey = "timestamp"
 	cfg.EncoderConfig.EncodeTime = func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
@@ -26,31 +27,28 @@ func NewLogger(level zapcore.Level, options ...zap.Option) *LeveledLogger {
 		log.Fatalf("err creating logger: %v\n", err.Error())
 	}
 
-	return &LeveledLogger{
-		Logger: zapLogger,
-		Level:  level,
-	}
+	return zapLogger
 }
 
-// Error implements the LeveledLogWriter Error func with a zap logger.
-func (zl LeveledLogger) Error(ll LogLine) {
-	zl.Logger.Error(ll.Message, ll.ZapFields()...)
-}
-
-// Warn implements the LeveledLogWriter Warn func with a zap logger.
-func (zl LeveledLogger) Warn(ll LogLine) {
-	zl.Logger.Warn(ll.Message, ll.ZapFields()...)
-}
-
-// Info implements the LeveledLogWriter Info func with a zap logger.
-func (zl LeveledLogger) Info(ll LogLine) {
-	zl.Logger.Info(ll.Message, ll.ZapFields()...)
-}
-
-// Debug implements the LeveledLogWriter Debug func with a zap logger.
-func (zl LeveledLogger) Debug(ll LogLine) {
-	zl.Logger.Debug(ll.Message, ll.ZapFields()...)
-}
+// // Error implements the LeveledLogWriter Error func with a zap logger.
+// func (zl LeveledLogger) Error(ll LogLine) {
+// 	zl.Logger.Error(ll.Message, ll.ZapFields()...)
+// }
+//
+// // Warn implements the LeveledLogWriter Warn func with a zap logger.
+// func (zl LeveledLogger) Warn(ll LogLine) {
+// 	zl.Logger.Warn(ll.Message, ll.ZapFields()...)
+// }
+//
+// // Info implements the LeveledLogWriter Info func with a zap logger.
+// func (zl LeveledLogger) Info(ll LogLine) {
+// 	zl.Logger.Info(ll.Message, ll.ZapFields()...)
+// }
+//
+// // Debug implements the LeveledLogWriter Debug func with a zap logger.
+// func (zl LeveledLogger) Debug(ll LogLine) {
+// 	zl.Logger.Debug(ll.Message, ll.ZapFields()...)
+// }
 
 // ZapFields converts a LogLine to a slice of zapcore.Field.
 //
