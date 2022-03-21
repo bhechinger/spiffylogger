@@ -13,9 +13,9 @@ type loggerKey struct{}
 
 // loggerFromContext pulls a logger from a context
 func loggerFromContext(ctx context.Context) (l *zap.Logger, found bool) {
-	key, ok := ctx.Value(loggerKey{}).(*zap.Logger)
+	value, ok := ctx.Value(loggerKey{}).(*zap.Logger)
 	if ok {
-		return key, ok
+		return value, ok
 	}
 	return nil, false
 }
