@@ -27,6 +27,7 @@ type Span struct {
 	cID    string
 	sID    string
 	logger *zap.Logger
+	fields []zap.Field
 }
 
 // OpenSpan configures and returns a Span from a context, creating a child span if one exists in the current context
@@ -177,8 +178,9 @@ func (s *Span) Debug(msg string, fields ...zapcore.Field) {
 func (s *Span) printToLog(level zapcore.Level, msg string, depth int, fields ...zapcore.Field) {
 	depth++
 	c := stack.Caller(depth)
-	dur := time.Since(s.start).Nanoseconds()
+	fields = append(fields, s.fields...) // Append our With() fields
 	ll := NewLine(level, s, msg, &c, fields...)
+	dur := time.Since(s.start).Nanoseconds()
 	switch level {
 	case zapcore.ErrorLevel:
 		s.logger.Error(msg, ll.ZapFields(dur)...)
@@ -189,4 +191,9 @@ func (s *Span) printToLog(level zapcore.Level, msg string, depth int, fields ...
 	case zapcore.DebugLevel:
 		s.logger.Debug(msg, ll.ZapFields(dur)...)
 	}
+}
+
+func (s *Span) With(fields ...zap.Field) *Span {
+	s.fields = append(s.fields, fields...)
+	return s
 }
