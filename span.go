@@ -124,6 +124,18 @@ func (s *Span) newID(depth int) string {
 	return id.String()
 }
 
+// SetSpanID allows the span id to be over-ridden
+func (s *Span) SetSpanID(sID string) *Span {
+	s.sID = sID
+	return s
+}
+
+// SetCorrelationID allows the correlation id to be over-ridden
+func (s *Span) SetCorrelationID(cID string) *Span {
+	s.cID = cID
+	return s
+}
+
 // Close .
 func (s *Span) Close() {
 	// TODO: close/end OT span
