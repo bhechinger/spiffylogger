@@ -130,10 +130,20 @@ func (s *Span) SetSpanID(sID string) *Span {
 	return s
 }
 
+// GetSpanID ...
+func (s Span) GetSpanID() string {
+	return s.sID
+}
+
 // SetCorrelationID allows the correlation id to be over-ridden
 func (s *Span) SetCorrelationID(cID string) *Span {
 	s.cID = cID
 	return s
+}
+
+// GetCorrelationID ...
+func (s Span) GetCorrelationID() string {
+	return s.cID
 }
 
 // Close .
