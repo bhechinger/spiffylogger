@@ -156,7 +156,7 @@ func (s Span) GetCorrelationID() string {
 func (s *Span) Close() {
 	// TODO: close/end OT span
 	// TODO: add timing metric to OT
-	s.printToLog(zapcore.DebugLevel, "span closed", 1)
+	// s.printToLog(zapcore.DebugLevel, "span closed", 1)
 }
 
 // This is neat but unfortunately it breaks the zap interface expectations
