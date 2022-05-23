@@ -99,7 +99,7 @@ func openChildSpan(s *Span, childName string, depth int) *Span {
 	}
 	ns.sID = ns.newID(depth)
 
-	ns.printToLog(zapcore.DebugLevel, "span opened (child)", depth)
+	// ns.printToLog(zapcore.DebugLevel, "span opened (child)", depth)
 	return ns
 }
 
@@ -133,7 +133,7 @@ func openNewSpan(name string, l *zap.Logger, depth int, correlationID string) *S
 	}
 
 	s.sID = s.newID(depth)
-	s.printToLog(zapcore.DebugLevel, "span opened", 1)
+	// s.printToLog(zapcore.DebugLevel, "span opened", 1)
 	return s
 }
 
